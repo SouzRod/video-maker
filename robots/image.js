@@ -1,5 +1,6 @@
 const google = require('googleapis').google
 const customSearch = google.customsearch('v1')
+const imageDownloader = require('image-downloader')
 const state = require('./state')
 
 const googleSearchCredentials = require('../credentials/google-search.json')
@@ -9,6 +10,7 @@ async function robot() {
 
     await fetchImagesOfAllSentences(content)
 
+    await downloadAllImages(content)
     state.save(content)
 
     async function fetchImagesOfAllSentences(content) {
@@ -32,6 +34,40 @@ async function robot() {
 
         return response.data.items.map(item => {
             return item.link
+        })
+    }
+
+    async function downloadAllImages(content) {
+        content.downloadedImages = []
+
+        content.sentences[1].images[0] = 'https://www.culturalweekly.com/wp-content/uploads/2011/11/michael-jackson-hd-wallpaper.jpg'
+        for (let sentenceIndex = 0; sentenceIndex < content.sentences.length; sentenceIndex++) {
+            const images = content.sentences[sentenceIndex].images
+
+            for (let imageIndex = 0; imageIndex < images.length; imageIndex++) {
+                const imageUrl = images[imageIndex]
+
+                try {
+                    if (content.downloadedImages.includes(imageUrl)){
+                        throw new Error('Imagem já foi baixada')
+                    }
+                    await downloadAndSave(imageUrl, `${sentenceIndex}-original.png`)
+                    content.downloadedImages.push(imageUrl)
+                    console.log(`> [${sentenceIndex}][${imageIndex}] Baixou imagem com sucesso ${imageUrl}`)
+                    break
+                } catch (err) {
+                    console.log(`> [${sentenceIndex}][${imageIndex}] Erro ao baixar (${imageUrl}): ${err}`)
+
+                }
+            }
+        }
+    }
+
+    async function downloadAndSave(url, fileName) {
+        return imageDownloader.image({
+            url,
+            url,
+            dest: `./content/${fileName}`
         })
     }
 }
