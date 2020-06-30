@@ -8,6 +8,8 @@ const googleSearchCredentials = require('../credentials/google-search.json')
 
 
 async function robot() {
+    console.log('> [image-robot] Starting...')
+
     const content = state.load()
 
     await fetchImagesOfAllSentences(content)
